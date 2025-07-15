@@ -132,8 +132,8 @@ func (p *Processor) sendSettings(chatId int, username string) (err error) {
 	msg := fmt.Sprintf(
 		"*Настройки уведомлений:*\n"+
 			"1. Распродажи: *%s* \n"+
-			"2. Бесплатные выходные: *%s* \n"+
-			"3.  Скидки ваших игр: *%s* \n\n"+
+			"2. Ежедневные скидки: *%s* \n"+
+			"3. Скидки ваших игр: *%s* \n\n"+
 			"Чтобы изменить настроки напишите номера которые хотите отключить или включить через запятую\n\nЧтобы выйти без изменений напишите \"exit\" ", sales, freeWeekend, discounts)
 
 	if err := p.tg.SendMessage(chatId, msg); err != nil {

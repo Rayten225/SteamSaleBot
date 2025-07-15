@@ -76,7 +76,8 @@ func (p *Processor) DiscNotif() {
 			log.Println("can't get users from storage", err)
 		}
 		for u, games := range users {
-			time.Sleep(1 * time.Minute)
+			log.Println(u.UserName, u.UserSettings.ChatId)
+			time.Sleep(30 * time.Second)
 			msg := ""
 			for _, g := range games {
 				game, err := p.tg.Game(g.ID)
@@ -105,13 +106,7 @@ func (p *Processor) DiscNotif() {
 				}
 			}
 		}
-		loc, _ := time.LoadLocation("Europe/Moscow")
-		now := time.Now().In(loc)
-		target := time.Date(now.Year(), now.Month(), now.Day(), 10, 0, 0, 0, loc)
-		if now.After(target) {
-			target = target.Add(24 * time.Hour)
-		}
-		time.Sleep(time.Until(target))
+		time.Sleep(30 * time.Minute)
 	}
 }
 
@@ -119,35 +114,35 @@ func (p *Processor) WeekSaleNotif() {
 	for {
 		loc, _ := time.LoadLocation("Europe/Moscow")
 		now := time.Now().In(loc)
-		target := time.Date(now.Year(), now.Month(), now.Day(), 10, 0, 0, 0, loc)
+		target := time.Date(now.Year(), now.Month(), now.Day(), 10, 00, 0, 0, loc)
 		if now.After(target) {
 			target = target.Add(24 * time.Hour)
+
+			users, err := p.storage.Users()
+			if err != nil {
+				log.Println("can't get users from storage", err)
+			}
+			for u, _ := range users {
+				msg := "Ежедневные скидки:"
+				games, err := p.tg.Sale()
+				if err != nil {
+					log.Println("can't get WeekSale", err)
+				}
+				for _, g := range games {
+					msg += fmt.Sprintf("\n\nНазвание: "+g.Title+
+						"\nЦена до: "+g.OldPrice+
+						"\nЦена после: "+g.FinalPrice+
+						"\n[Открыть steam](%s)", g.URL)
+				}
+				if msg != "" && u.UserSettings.FreeWeekend != false {
+					if err := p.tg.SendMessage(u.UserSettings.ChatId, msg); err != nil {
+						log.Println("can't send message", err)
+					}
+				}
+				time.Sleep(10 * time.Second)
+			}
 		}
 		time.Sleep(time.Until(target))
-
-		users, err := p.storage.Users()
-		if err != nil {
-			log.Println("can't get users from storage", err)
-		}
-		for u, _ := range users {
-			msg := ""
-			games, err := p.tg.Sale()
-			if err != nil {
-				log.Println("can't get WeekSale", err)
-			}
-			for _, g := range games {
-				msg += fmt.Sprintf("\n\nНазвание: "+g.Title+
-					"\nЦена до: "+g.OldPrice+
-					"\nЦена после: "+g.FinalPrice+
-					"\n[Открыть steam](%s)", g.URL)
-			}
-			if msg != "" && u.UserSettings.FreeWeekend != false {
-				if err := p.tg.SendMessage(u.UserSettings.ChatId, msg); err != nil {
-					log.Println("can't send message", err)
-				}
-			}
-			time.Sleep(10 * time.Second)
-		}
 	}
 }
 
