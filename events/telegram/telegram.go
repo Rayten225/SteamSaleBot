@@ -77,17 +77,21 @@ func (p *Processor) DiscNotif() {
 		}
 		for u, games := range users {
 			time.Sleep(30 * time.Second)
+			log.Println(u.UserName, u.UserSettings.ChatId)
 			msg := ""
 			for _, g := range games {
 				game, err := p.tg.Game(g.ID)
 				if err != nil {
 					log.Println("can't get game", err)
-					time.Sleep(1 * time.Minute)
+					time.Sleep(5 * time.Minute)
+					game, err = p.tg.Game(g.ID)
 				}
 				re := regexp.MustCompile(`\d+`)
 				final, err := strconv.Atoi(re.FindString(game.Price.Final))
 				now, err := strconv.Atoi(re.FindString(g.Price))
-
+				if game.Price.Final != "" {
+					continue
+				}
 				u.Game.ID = g.ID
 				u.Game.Name = g.Name
 				u.Game.Price = game.Price.Final
@@ -100,6 +104,7 @@ func (p *Processor) DiscNotif() {
 
 			}
 			if msg != "" && u.UserSettings.Discounts != false {
+				log.Println("Отправлено сообщение о скидке", u.UserName, msg)
 				if err := p.tg.SendMessage(u.UserSettings.ChatId, msg); err != nil {
 					log.Println("can't send message", err)
 				}
@@ -121,24 +126,12 @@ func (p *Processor) WeekSaleNotif() {
 			if err != nil {
 				log.Println("can't get users from storage", err)
 			}
+			games, err := p.tg.Sale()
+			if err != nil {
+				log.Println("can't get WeekSale", err)
+			}
 			for u, _ := range users {
-				msg := "Ежедневные скидки:"
-				games, err := p.tg.Sale()
-				if err != nil {
-					log.Println("can't get WeekSale", err)
-				}
-				for _, g := range games {
-					msg += fmt.Sprintf("\n\nНазвание: "+g.Title+
-						"\nЦена до: "+g.OldPrice+
-						"\nЦена после: "+g.FinalPrice+
-						"\n[Открыть steam](%s)", g.URL)
-				}
-				if msg != "" && u.UserSettings.FreeWeekend != false {
-					if err := p.tg.SendMessage(u.UserSettings.ChatId, msg); err != nil {
-						log.Println("can't send message", err)
-					}
-				}
-				time.Sleep(10 * time.Second)
+				go p.weekSaleSend(games, u)
 			}
 		}
 		time.Sleep(time.Until(target))
@@ -242,10 +235,12 @@ func (p *Processor) SalesNotif() {
 				log.Fatal("SalesNotif: can't load users:", err)
 			}
 			for u, _ := range users {
-				log.Println(u.UserSettings.ChatId)
-				if err := p.tg.SendMessage(u.UserSettings.ChatId, msg); err != nil {
-					log.Printf("SalesNotif: can't send to %d: %v", u.UserSettings.ChatId, err)
-				}
+				go func() {
+					log.Println("Отправлено сообщение о распродаже", u.UserName, u.UserSettings.ChatId)
+					if err := p.tg.SendMessage(u.UserSettings.ChatId, msg); err != nil {
+						log.Printf("SalesNotif: can't send to %d: %v", u.UserSettings.ChatId, err)
+					}
+				}()
 			}
 
 			// убираем событие из списка
@@ -272,6 +267,22 @@ func (p *Processor) Process(event events.Event) error {
 	default:
 		return e.Warp("can't process message", ErrUnknownEventType)
 
+	}
+}
+
+func (p *Processor) weekSaleSend(games []telegram.GameInfo, u *storage.User) {
+	msg := "Ежедневные скидки:"
+	for _, g := range games {
+		msg += fmt.Sprintf("\n\nНазвание: "+g.Title+
+			"\nЦена до: "+g.OldPrice+
+			"\nЦена после: "+g.FinalPrice+
+			"\n[Открыть steam](%s)", g.URL)
+	}
+	if msg != "" && u.UserSettings.FreeWeekend != false {
+		log.Println("Отправлено сообщение о скидках недели", u.UserName, u.UserSettings.ChatId)
+		if err := p.tg.SendMessage(u.UserSettings.ChatId, msg); err != nil {
+			log.Println("can't send message", err)
+		}
 	}
 }
 
