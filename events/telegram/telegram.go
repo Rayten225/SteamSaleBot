@@ -76,7 +76,6 @@ func (p *Processor) DiscNotif() {
 			log.Println("can't get users from storage", err)
 		}
 		for u, games := range users {
-			log.Println(u.UserName, u.UserSettings.ChatId)
 			time.Sleep(30 * time.Second)
 			msg := ""
 			for _, g := range games {
