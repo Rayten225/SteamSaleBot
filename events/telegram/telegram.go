@@ -77,7 +77,6 @@ func (p *Processor) DiscNotif() {
 		}
 		for u, games := range users {
 			time.Sleep(30 * time.Second)
-			log.Println(u.UserName, u.UserSettings.ChatId)
 			msg := ""
 			for _, g := range games {
 				game, err := p.tg.Game(g.ID)
