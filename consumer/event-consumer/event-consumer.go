@@ -29,7 +29,7 @@ func (c *Consumer) Start() error {
 		gotEvents, err := c.fetcher.Fetch(c.batchSize)
 		if err != nil {
 			log.Printf("Error fetching events: %v", err)
-			for i := 0; i > 3; i++ {
+			for i := 0; i < 3; i++ {
 				log.Printf("Retry fetching events: %v", i)
 				time.Sleep(1 * time.Minute)
 				gotEvents, err = c.fetcher.Fetch(c.batchSize)
