@@ -29,17 +29,24 @@ func (c *Consumer) Start() error {
 		gotEvents, err := c.fetcher.Fetch(c.batchSize)
 		if err != nil {
 			log.Printf("Error fetching events: %v", err)
+
+			success := false
 			for i := 0; i < 3; i++ {
-				log.Printf("Retry fetching events: %v", i)
+				log.Printf("Retry %d/3 fetching events...", i+1)
 				time.Sleep(1 * time.Minute)
+
 				gotEvents, err = c.fetcher.Fetch(c.batchSize)
-				if err != nil {
-					continue
-				} else {
+				if err == nil {
+					success = true
 					break
 				}
 			}
-			continue
+
+			if !success {
+				log.Println("All retries failed. Waiting before next attempt...")
+				time.Sleep(3 * time.Minute) // ⛔ ключевое отличие!
+				continue
+			}
 		}
 		if len(gotEvents) == 0 {
 			time.Sleep(1 * time.Second)
