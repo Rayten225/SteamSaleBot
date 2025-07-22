@@ -111,6 +111,7 @@ func (c *Client) doSteamReq(link string) (data []byte, err error) {
 	defer func() { err = e.WrapIfErr("can't do request", err) }()
 
 	req, err := http.NewRequest(http.MethodGet, link, nil)
+	req.Header.Set("X-Forwarded-For", "213.180.204.3")
 	req.Header.Add("Accept-Language", "ru")
 	if err != nil {
 		return data, err

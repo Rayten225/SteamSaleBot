@@ -6,6 +6,7 @@ import (
 	"SteamSaleBot/events/telegram"
 	"SteamSaleBot/storage/files"
 	"flag"
+	"time"
 	"log"
 )
 
@@ -16,6 +17,11 @@ const (
 )
 
 func main() {
+loc, err := time.LoadLocation("Asia/Yekaterinburg") // или твой часовой пояс
+  if err != nil {
+    panic(err)
+  }
+  time.Local = loc
 	eventsProcessor := telegram.New(
 		tgClient.New(tgBotHost, mustToken()),
 		files.New(storagePath),

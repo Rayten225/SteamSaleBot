@@ -88,7 +88,7 @@ func (p *Processor) DiscNotif() {
 				re := regexp.MustCompile(`\d+`)
 				final, err := strconv.Atoi(re.FindString(game.Price.Final))
 				now, err := strconv.Atoi(re.FindString(g.Price))
-				if game.Price.Final != "" {
+				if game.Price.Final == "" {
 					continue
 				}
 				u.Game.ID = g.ID
